@@ -1,0 +1,31 @@
+name: Image digest update
+
+on:
+  workflow_dispatch:
+  schedule:
+    # At the end of every day
+    - cron: "0 0 * * *"
+
+jobs:
+  image-update:
+    name: Image digest update
+    runs-on: self-hosted
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+    - uses: chainguard-dev/digestabot@43222237fd8a07dc41a06ca13e931c95ce2cedac # v1.2.2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        signoff: false
+        author: Eduardo Thums <eduardocristiano01@gmail.com>
+        committer: Eduardo Thums <eduardocristiano01@gmail.com>
+        labels-for-pr: automated pr, kind/cleanup, release-note-none
+        branch-for-pr: update-digests
+        title-for-pr: Update images digests
+        description-for-pr: Update images digests
+        commit-message: Update images digests
