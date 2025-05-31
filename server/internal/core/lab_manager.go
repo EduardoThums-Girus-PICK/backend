@@ -12,7 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"encoding/base64"
+	"sync"
+
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,9 +25,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/utils/pointer"
-	"encoding/base64"
-	"sync"
-	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 var config *Config
@@ -281,6 +282,8 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 	if template != nil && template.Image != "" {
 		labImage = template.Image
 		log.Printf("Usando imagem personalizada do template: %s", labImage)
+
+
 	} else {
 		// Caso contrário, usar a lógica de seleção de imagem padrão
 		labImage = GetImageForTemplate(templateName, "")
@@ -301,7 +304,8 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 	// Definir comando com base no tipo de laboratório
 	var command []string
 	if isKubernetesLab {
-		command = []string{"/bin/bash", "-c", "tail -f /dev/null"}
+		// Para Kubernetes, usar o entrypoint da imagem
+		command = []string{"/bin/bash", "-c", "entrypoint.sh"}
 	} else if isDockerLab {
 		command = []string{"/bin/bash", "-c", "/scripts/init-docker.sh"}
 	} else if isLocalStackLab {
@@ -430,7 +434,25 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 			},
 		}
 	}
+
+	// Definer o readiness probe do lab
+	var readinessProbe *v1.Probe
 	
+	if isKubernetesLab {
+		// Para labs de Kubernetes é necessário aguardar um certo tempo até que o cluster interno esteja inicializado corretamente
+		readinessProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				Exec: &v1.ExecAction{
+					Command: []string{"kubectl", "wait", "--for=condition=Ready", "nodes", "--all", "--timeout=60s"},
+				},
+			},
+			InitialDelaySeconds: 120,
+			PeriodSeconds:       10,
+			TimeoutSeconds:      5,
+			FailureThreshold:    10,
+		}
+	}
+
 	// Definir recursos do pod
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -467,6 +489,7 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 						},
 					},
 					VolumeMounts: volumeMounts,
+					ReadinessProbe: readinessProbe,
 				},
 			},
 			Volumes: volumes,
