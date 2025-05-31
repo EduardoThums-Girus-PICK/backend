@@ -31,7 +31,7 @@ COPY --from=builder /app/server/server /app/healthcheck/healthcheck /usr/bin/
 ENV PORT=8080
 ENV GIN_MODE=release
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=5 CMD healthcheck || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=5 CMD ["/usr/bin/healthcheck"] || exit 1
 EXPOSE $PORT
 
 ENTRYPOINT ["/usr/bin/server"]
