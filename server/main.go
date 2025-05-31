@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/linuxtips/girus/internal/core"
+	"github.com/linuxtips/girus/server/internal/core"
 )
 
 var version = "0.1"

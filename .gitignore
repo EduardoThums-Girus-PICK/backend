@@ -73,4 +73,6 @@ girus
 *.key
 *.cert
 *.crt
-*.p12 
+*.p12
+healthcheck/healthcheck
+server/server

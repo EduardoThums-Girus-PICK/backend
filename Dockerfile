@@ -7,7 +7,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o girus-server main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o healthcheck ./healthcheck
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./server
 
 # hadolint ignore=DL3007
 FROM cgr.dev/chainguard/static:latest
@@ -25,11 +26,12 @@ LABEL \
   org.opencontainers.image.documentation="https://github.com/eduardothums/girus-pick/README.md" \
   org.opencontainers.image.revision="$revision"
 
-COPY --from=builder /app/girus-server /usr/bin/
+COPY --from=builder /app/server/server /app/healthcheck/healthcheck /usr/bin/
 
 ENV PORT=8080
 ENV GIN_MODE=release
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=5 CMD healthcheck || exit 1
 EXPOSE $PORT
 
-ENTRYPOINT ["/usr/bin/girus-server"]
+ENTRYPOINT ["/usr/bin/server"]
