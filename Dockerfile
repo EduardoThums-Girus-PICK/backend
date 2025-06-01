@@ -24,8 +24,8 @@ LABEL \
   org.opencontainers.image.licenses="MIT" \
   org.opencontainers.image.version="$version" \
   org.opencontainers.image.url="https://linuxtips.io/girus-labs/" \
-  org.opencontainers.image.source="https://github.com/eduardothums/girus-pick" \
-  org.opencontainers.image.documentation="https://github.com/eduardothums/girus-pick/README.md" \
+  org.opencontainers.image.source="https://github.com/EduardoThums-Girus-PICK/backend" \
+  org.opencontainers.image.documentation="https://github.com/EduardoThums-Girus-PICK/backend/README.md" \
   org.opencontainers.image.revision="$revision"
 
 COPY --from=builder /app/server/server /app/healthcheck/healthcheck /usr/bin/
