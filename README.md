@@ -263,3 +263,37 @@ ENTRYPOINT ["/usr/bin/server"]
 5. Adicionamos um healthcheck inbutido na imagem com o comando `HEALTHCHECK`
 
 6. Definimos o binário `/usr/bin/server` com o `ENTRYPOINT` da imagem
+
+
+## Fluxo do CI/CD
+
+Utilizamos o GitHub Actions como plataforma de CI/CD do projeto, onde é realizado validações de segurança, boas práticas, build de imagems e publicações de releases através de tags do git.
+
+Existem dois momentos onde os workflows definidos em `./github/workflows` são disparados:
+
+1. `security_check.yaml`: quando há algum pull request aberto com a branch target apontando para a `main`
+2. `release.yaml`: quando uma tag é criada no repositório
+
+### security_check.yaml
+
+Este workflow tem como objetivo:
+
+1. Aplicar validações de segurança no código afim de encontrar vulnerabilidades de segurança nas dependências através da ferramenta [Trivy](https://trivy.dev/latest/)
+
+2. Aplicar validações de segurança no build da imagem, afim de encontrar vulnerabilidades de segurança imagens base através da ferramenta [Trivy](https://trivy.dev/latest/)
+
+3. Aplicar validações de boas práticas de criação de imagens com a ajuda do [Hadolint](https://github.com/hadolint/hadolint)
+
+### release.yaml
+
+Este workflow tem como objetivo:
+
+1. Aplicar todas as etapas realizadas no workflow `security_check.yaml` para garantir que nenhuma vulnerabilidade veio a surgir entre o tempo de merge do pull request e a geração da tag
+
+2. Buildar a imagem com a tag apontando para a tag do git
+
+3. Fazer o push da imagem para o repositório no docker hub
+
+4. Assinar a imagem utilizando o [Cosign](https://docs.sigstore.dev/cosign/)
+
+5. Criar uma release com base na tag do git
