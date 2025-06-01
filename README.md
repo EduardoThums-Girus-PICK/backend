@@ -65,6 +65,7 @@ A imagem foi criada com o intuito de ser executada dentro de um ecossistema Kube
 Siga o passo-a-passo para executar a imagem utilizando o comando `kubectl apply`.
 
 1. Aplique o manifesto que cria o `ServiceAccount`, o `ClusterRoleBinding` e o `Pod` 
+
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -149,3 +150,116 @@ Para verificar a autenticidade da imagem é possível utilizar o programa `cosig
 ```bash
 cosign verify --key https://raw.githubusercontent.com/EduardoThums-Girus-PICK/cosign-pub-key/refs/heads/main/cosign.pub eduardothums/girus:backend-v1.0.0
 ```
+
+## Sobre a construção da imagem
+
+Abaixo está o arquivo `Dockerfile` utilizado para buildar a imagem, foi utilizado a técnica de multi-stage build para otimizar o tamanho final das layers, abaixo será explicado o funcionamento de cada comando agrupados por stage.
+
+```Dockerfile
+# go:1.24.3
+FROM cgr.dev/chainguard/go:latest@sha256:86afb531f453caf27580a0c7a11ac7f6c423cc1599a7ef53645e7353353ae302 AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o healthcheck ./healthcheck
+# hadolint ignore=DL3059
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./server
+
+FROM cgr.dev/chainguard/static:latest@sha256:633aabd19a2d1b9d4ccc1f4b704eb5e9d34ce6ad231a4f5b7f7a3af1307fdba8
+
+ARG revision
+
+LABEL \
+  org.opencontainers.image.title="Girus Backend" \
+  org.opencontainers.image.description="Backend for the Girus application" \
+  org.opencontainers.image.authors="Eduardo Thums <eduardocristiano01@gmail.com>" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.version="1.0.0" \
+  org.opencontainers.image.url="https://linuxtips.io/girus-labs/" \
+  org.opencontainers.image.source="https://github.com/eduardothums/girus-pick" \
+  org.opencontainers.image.documentation="https://github.com/eduardothums/girus-pick/README.md" \
+  org.opencontainers.image.revision="$revision"
+
+COPY --from=builder /app/server/server /app/healthcheck/healthcheck /usr/bin/
+
+ENV PORT=8080
+ENV GIN_MODE=release
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=2s --retries=5 CMD ["/usr/bin/healthcheck"]
+EXPOSE $PORT
+
+ENTRYPOINT ["/usr/bin/server"]
+```
+
+### Stage de build
+
+```Dockerfile
+# go:1.24.3
+FROM cgr.dev/chainguard/go:latest@sha256:86afb531f453caf27580a0c7a11ac7f6c423cc1599a7ef53645e7353353ae302 AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o healthcheck ./healthcheck
+# hadolint ignore=DL3059
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./server
+```
+
+1. O comando `FROM` define a imagem base do stage `builder`, utilizamos a imagem do time da chainguard por não conter vulnerabilidades e ser mais segura de uma forma geral, além disso é utilizado o sha256 digest do repositório para garantir a integradade da versão caso haja uma atualização forçada.
+
+2. Os comandos `COPY go.mod go.sum ./` e `RUN go mod download` copiam os arquivos necessários e fazem o download das dependências do projeto, dessa forma caso haja alguma mudança no nosso código fonte, não será preciso re-buildar a layer novamente, otimizando o tempo de build e armazenamento das layers.
+
+3. O comando `COPY . .` copia tudo do contexto de build atual para dentro da imagem, isso é possivel pois o nosso arquivo `.dockerignore` ignora tudo por padrão e libera apenas a cópia de arquivos especificos, precavendo a adição de arquivos futuros que não deveriam ir para a imagem.
+
+4. Os comandos `RUN ... go build` compilam o código goland do servidor e do script de healthcheck para um binário.
+
+### Stage final
+
+```Dockerfile
+FROM cgr.dev/chainguard/static:latest@sha256:633aabd19a2d1b9d4ccc1f4b704eb5e9d34ce6ad231a4f5b7f7a3af1307fdba8
+
+ARG revision
+ARG version
+
+LABEL \
+  org.opencontainers.image.title="Girus Backend" \
+  org.opencontainers.image.description="Backend for the Girus application" \
+  org.opencontainers.image.authors="Eduardo Thums <eduardocristiano01@gmail.com>" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.version="$version" \
+  org.opencontainers.image.url="https://linuxtips.io/girus-labs/" \
+  org.opencontainers.image.source="https://github.com/eduardothums/girus-pick" \
+  org.opencontainers.image.documentation="https://github.com/eduardothums/girus-pick/README.md" \
+  org.opencontainers.image.revision="$revision"
+
+COPY --from=builder /app/server/server /app/healthcheck/healthcheck /usr/bin/
+
+ENV PORT=8080
+ENV GIN_MODE=release
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=2s --retries=5 CMD ["/usr/bin/healthcheck"]
+EXPOSE $PORT
+
+ENTRYPOINT ["/usr/bin/server"]
+```
+
+1. A imagem base utilizada é a `static` da chainguard, pois além de não conter vulnerabilidades, ela é perfeita para casos onde não é preciso nenhum outro programa instalado na imagem apenas um binário que foi pré-compilado nos stages anteriores.
+
+2. Utilizamos o `ARG revision` para passar por argumento no momento do build da imagem o sha256 do commit para ser adicionado nas labels.
+
+3. No `LABEL` adicionamos diversas labels com informações relevantes da imagem, como versão, autores, documentação, endereço do código fonte etc.
+
+4. Copiamos os conteudos do stage de build com o `COPY` trazendo para a imagem apenas os binários compilados do golang.
+
+5. Adicionamos um healthcheck inbutido na imagem com o comando `HEALTHCHECK`
+
+6. Definimos o binário `/usr/bin/server` com o `ENTRYPOINT` da imagem

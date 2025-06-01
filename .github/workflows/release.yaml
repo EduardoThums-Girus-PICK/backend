@@ -34,6 +34,9 @@ jobs:
         with:
           push: true
           tags: eduardothums/girus:backend-${{ github.ref_name }}
+          build-args: |
+            revision=${{ github.sha }}
+            version=${{ github.ref_name }}
         env:
           SOURCE_DATE_EPOCH: 0
 
