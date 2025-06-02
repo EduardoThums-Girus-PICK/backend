@@ -490,6 +490,7 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 					},
 					VolumeMounts: volumeMounts,
 					ReadinessProbe: readinessProbe,
+					ImagePullPolicy: v1.PullIfNotPresent,
 				},
 			},
 			Volumes: volumes,
