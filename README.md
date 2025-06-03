@@ -60,11 +60,15 @@ A imagem foi criada com o intuito de ser executada dentro de um ecossistema Kube
 2025/05/31 21:58:37 Erro ao criar gerenciador de laboratórios: falha ao obter configuração do cluster: stat /home/nonroot/.kube/config: no such file or directory
 ```
 
-**Importante**: o pod necessita de permissões de `cluster-admin` para ser possivel rodar de forma correta.
-
 Siga o passo-a-passo para executar a imagem utilizando o comando `kubectl apply`.
 
-1. Aplique o manifesto que cria o `ServiceAccount`, o `ClusterRoleBinding` e o `Pod` 
+1. Crie que namespace `girus`
+
+```bash
+kubectl create namespace girus
+```
+
+2. Aplique o manifesto que cria o `ServiceAccount`, o `ClusterRoleBinding` e o `Pod` 
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -72,6 +76,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: girus-sa
+  namespace: girus
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -80,7 +85,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: girus-sa
-    namespace: default
+    namespace: girus
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -90,6 +95,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: girus-backend
+  namespace: girus
   labels:
     app: girus-backend
     app.kubernetes.io/part-of: girus
@@ -110,6 +116,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: girus-backend
+  namespace: girus
 spec:
   selector:
     app: girus-backend
@@ -119,28 +126,28 @@ spec:
 EOF
 ```
 
-2. Aguarde até que o pod tenha inicializado
+3. Aguarde até que o pod tenha inicializado
 
 ```bash
-kubectl wait pod --all --for=condition=Ready -l app.kubernetes.io/part-of=girus --timeout 60s
+kubectl -n girus wait pod --all --for=condition=Ready -l app.kubernetes.io/part-of=girus --timeout 60s
 ```
 
-3. Inspecione os logs do pod
+4. Inspecione os logs do pod
 
 ```bash
-kubectl logs girus-backend
+kubectl -n girus logs girus-backend
 ```
 
-4. Faça um port-foward para ser possivel chamar a API através do localhost
+5. Faça um port-foward para ser possivel chamar a API através do localhost
 
 ```bash
-kubectl port-forward services/girus-backend 8080:8080
+kubectl -n girus port-forward services/girus-backend 8080:8080
 ```
 
-5. Em outro terminal chame a API no endpoint de healthcheck
+6. Em outro terminal chame a API no endpoint de healthcheck
 
 ```bash
-curl http://localhost:8080/api/v1/health
+curl -n girus http://localhost:8080/api/v1/health
 ```
 
 ## Como verificar a sua assinatura
