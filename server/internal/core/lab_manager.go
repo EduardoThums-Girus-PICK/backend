@@ -446,7 +446,7 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 					Command: []string{"kubectl", "wait", "--for=condition=Ready", "nodes", "--all", "--timeout=60s"},
 				},
 			},
-			InitialDelaySeconds: 120,
+			InitialDelaySeconds: 180,
 			PeriodSeconds:       10,
 			TimeoutSeconds:      5,
 			FailureThreshold:    10,
