@@ -435,7 +435,7 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 		}
 	}
 
-	// Definer o readiness probe do lab
+	// Definir o readiness probe do lab
 	var readinessProbe *v1.Probe
 	
 	if isKubernetesLab {
@@ -451,6 +451,28 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 			TimeoutSeconds:      5,
 			FailureThreshold:    10,
 		}
+	}
+
+	// Definir resources para o pod
+	var requestsCpu = template.Resources.Requests.Cpu;
+	var requestsMemory = template.Resources.Requests.Memory;
+	var limitCpu = template.Resources.Limit.Cpu;
+	var limitMemory = template.Resources.Limit.Memory;
+
+	if requestsCpu == "" {
+		requestsCpu = "200m";
+	}
+
+	if requestsMemory == "" {
+		requestsMemory = "512Mi";
+	}
+
+	if limitCpu == "" {
+		limitCpu = "500m";
+	}
+
+	if limitMemory == "" {
+		limitMemory = "1Gi";
 	}
 
 	// Definir recursos do pod
@@ -480,12 +502,12 @@ func (lm *LabManager) CreateLabEnvironment(userId string, templateName string) e
 					},
 					Resources: v1.ResourceRequirements{
 						Requests: v1.ResourceList{
-							v1.ResourceCPU:    resource.MustParse("200m"),
-							v1.ResourceMemory: resource.MustParse("512Mi"),
+							v1.ResourceCPU:    resource.MustParse(requestsCpu),
+							v1.ResourceMemory: resource.MustParse(requestsMemory),
 						},
 						Limits: v1.ResourceList{
-							v1.ResourceCPU:    resource.MustParse("500m"),
-							v1.ResourceMemory: resource.MustParse("1Gi"),
+							v1.ResourceCPU:    resource.MustParse(limitCpu),
+							v1.ResourceMemory: resource.MustParse(limitMemory),
 						},
 					},
 					VolumeMounts: volumeMounts,
