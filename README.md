@@ -1,29 +1,29 @@
 
-# Desafio PICK Girus
+# 🚀 Desafio PICK Girus
 
 O arquivo `Dockerfile` da aplicação criado como parte da resolução do primeiro desafio PICK da 2ª turma de 2024.
 
 O objetivo era criar um imagem docker de uma aplicação em golang de forma otimizada, utilizando as melhores práticas de segurança e com o menor tamanho possível.
 
-## Backend Girus
+## 🧠 Backend Girus
 
 O backend é o coração da plataforma GIRUS, responsável por orquestrar os ambientes Kubernetes para cada laboratório. Desenvolvido em Go com o framework Gin, ele gerencia o ciclo de vida dos laboratórios, fornece endpoints RESTful para o frontend, e implementa a validação automática das tarefas.
 
-## Principais Componentes do Backend
+## 🧩 Principais Componentes do Backend
 
 - **LabManager**: Orquestra a criação, monitoramento e exclusão de recursos Kubernetes
 - **TemplateManager**: Gerencia os templates de laboratórios disponíveis
 - **API Handlers**: Implementa os endpoints RESTful e WebSocket
 - **Validators**: Verifica o progresso das tarefas e fornece feedback imediato
 
-## Endpoints Principais
+## 🌐 Endpoints Principais
 
 - `/api/v1/templates`: Retorna a lista de templates de laboratórios disponíveis
 - `/api/v1/labs`: Cria um novo laboratório
 - `/api/v1/labs/{namespace}/{pod}/validate`: Valida uma tarefa específica
 - `/ws/terminal/{namespace}/{pod}`: Endpoint WebSocket para o terminal interativo
 
-## Como buildar a imagem
+## 🛠️ Como buildar a imagem
 
 Para buildar a imagem serão necessários os seguintes pré-requisitos:
 
@@ -50,7 +50,7 @@ docker image build -t girus-backend .
 docker image inspect girus-backend
 ```
 
-## Como executar a imagem
+## ▶️ Como executar a imagem
 
 A imagem foi criada com o intuito de ser executada dentro de um ecossistema Kubernetes, caso tente executala como um container docker através do comando `docker container run` encontrará o seguinte erro:
 
@@ -150,7 +150,7 @@ kubectl -n girus port-forward services/girus-backend 8080:8080
 curl -n girus http://localhost:8080/api/v1/health
 ```
 
-## Como verificar a sua assinatura
+## 🔏 Como verificar a sua assinatura
 
 Para verificar a autenticidade da imagem é possível utilizar o programa `cosign` utilizando a parte pública da chave utilizada para assinar a imagem.
 
@@ -158,7 +158,7 @@ Para verificar a autenticidade da imagem é possível utilizar o programa `cosig
 cosign verify --key https://raw.githubusercontent.com/EduardoThums-Girus-PICK/cosign-pub-key/refs/heads/main/cosign.pub eduardothums/girus:backend-v1.0.0
 ```
 
-## Sobre a construção da imagem
+## 🧱 Sobre a construção da imagem
 
 Abaixo está o arquivo `Dockerfile` utilizado para buildar a imagem, foi utilizado a técnica de multi-stage build para otimizar o tamanho final das layers, abaixo será explicado o funcionamento de cada comando agrupados por stage.
 
@@ -203,7 +203,7 @@ EXPOSE $PORT
 ENTRYPOINT ["/usr/bin/server"]
 ```
 
-### Stage de build
+### 🧪 Stage de build
 
 ```Dockerfile
 # go:1.24.3
@@ -229,7 +229,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./server
 
 4. Os comandos `RUN ... go build` compilam o código goland do servidor e do script de healthcheck para um binário.
 
-### Stage final
+### 🧼 Stage final
 
 ```Dockerfile
 FROM cgr.dev/chainguard/static:latest@sha256:633aabd19a2d1b9d4ccc1f4b704eb5e9d34ce6ad231a4f5b7f7a3af1307fdba8
@@ -272,7 +272,7 @@ ENTRYPOINT ["/usr/bin/server"]
 6. Definimos o binário `/usr/bin/server` com o `ENTRYPOINT` da imagem
 
 
-## Fluxo do CI/CD
+## 🔄 Fluxo do CI/CD
 
 Utilizamos o GitHub Actions como plataforma de CI/CD do projeto, onde é realizado validações de segurança, boas práticas, build de imagems e publicações de releases através de tags do git.
 
@@ -281,26 +281,20 @@ Existem dois momentos onde os workflows definidos em `./github/workflows` são d
 1. `security_check.yaml`: quando há algum pull request aberto com a branch target apontando para a `main`
 2. `release.yaml`: quando uma tag é criada no repositório
 
-### security_check.yaml
+### 🔒 `security_check.yaml`
 
 Este workflow tem como objetivo:
 
-1. Aplicar validações de segurança no código afim de encontrar vulnerabilidades de segurança nas dependências através da ferramenta [Trivy](https://trivy.dev/latest/)
+* 🔍 Escanear vulnerabilidades no código com [Trivy](https://trivy.dev/latest/)
+* 🐳 Escanear a imagem Docker
+* 🧹 Validar boas práticas com [Hadolint](https://github.com/hadolint/hadolint)
 
-2. Aplicar validações de segurança no build da imagem, afim de encontrar vulnerabilidades de segurança imagens base através da ferramenta [Trivy](https://trivy.dev/latest/)
-
-3. Aplicar validações de boas práticas de criação de imagens com a ajuda do [Hadolint](https://github.com/hadolint/hadolint)
-
-### release.yaml
+### 🚀 `release.yaml`
 
 Este workflow tem como objetivo:
 
-1. Aplicar todas as etapas realizadas no workflow `security_check.yaml` para garantir que nenhuma vulnerabilidade veio a surgir entre o tempo de merge do pull request e a geração da tag
-
-2. Buildar a imagem com a tag apontando para a tag do git
-
-3. Fazer o push da imagem para o repositório no docker hub
-
-4. Assinar a imagem utilizando o [Cosign](https://docs.sigstore.dev/cosign/)
-
-5. Criar uma release com base na tag do git
+* ✅ Reexecuta as validações de segurança
+* 🔧 Buildar a imagem com a tag apontando para a tag do git
+* 📤 Fazer o push da imagem para o repositório no docker hub
+* ✍️ Assinar a imagem utilizando o [Cosign](https://docs.sigstore.dev/cosign/)
+* 🏷️ Criar uma release com base na tag do git
