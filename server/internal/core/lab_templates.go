@@ -24,6 +24,7 @@ type LabTemplate struct {
 	Image       string         `json:"image" yaml:"image"`
 	TimerEnabled bool          `json:"timerEnabled" yaml:"timerEnabled"`
 	MaxDuration  string        `json:"maxDuration" yaml:"maxDuration"` // Formato: "30m", "2h", etc.
+	Resources  Resources
 }
 
 // TemplateFile define um arquivo de conteúdo do template
@@ -38,6 +39,16 @@ type Task struct {
 	Steps       []string    `json:"steps" yaml:"steps"`
 	Tips        []Tip       `json:"tips,omitempty" yaml:"tips,omitempty"`
 	Validation  []Validator `json:"validation" yaml:"validation"`
+}
+
+type Resources struct {
+	Limit ResourceUnit
+	Requests ResourceUnit
+}
+
+type ResourceUnit struct {
+	Cpu    string
+	Memory string
 }
 
 // Tip define uma dica associada a uma tarefa
@@ -95,7 +106,7 @@ func (tm *TemplateManager) LoadTemplates(clientset kubernetes.Interface) error {
 						log.Printf("  Tip %d: %s (tipo: %s)", j, tip.Title, tip.Type)
 					}
 				}
-				
+
 				tm.templates[template.Name] = template
 			}
 		}
