@@ -73,6 +73,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+          git config --global commit.gpgsign false
           git checkout -b feat/update-backend-version-to-${{ github.ref_name }}
 
       - name: Change backend image version on values.yaml
