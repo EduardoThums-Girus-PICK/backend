@@ -1,5 +1,5 @@
 # go:1.24.4
-FROM cgr.dev/chainguard/go:latest@sha256:3930f1a74c286cd1ee1d2f4a74b0fc48d0ca36ffdf76e39918161cc6576ccc9d AS builder
+FROM cgr.dev/chainguard/go:latest@sha256:a795ef7c7bfff08952c7cfc36f4415a31300ef95581dbec018288d2eb35adbc3 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o healthcheck ./healthcheck
 # hadolint ignore=DL3059
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./server
 
-FROM cgr.dev/chainguard/static:latest@sha256:797e62f43d04d792e9f930913e7d9f5a63e92bd19ca5e7e5139a692decee2dbc
+FROM cgr.dev/chainguard/static:latest@sha256:092aad9f6448695b6e20333a8faa93fe3637bcf4e88aa804b8f01545eaf288bd
 
 ARG revision
 ARG version
