@@ -13,6 +13,7 @@ jobs:
 
     permissions:
       contents: write
+      workflows: write
       pull-requests: write
       id-token: write
       issues: write
