@@ -83,7 +83,7 @@ jobs:
         run: |
           current=$(yq -r '.version' charts/girus/Chart.yaml)
           next=$(echo "$current" | awk -F. '{$NF += 1; print $1 "." $2 "." $3}')
-          yq -i ".version = \"$next\"" charts/girus/Chart.yaml
+          yq -yi ".version = \"$next\"" charts/girus/Chart.yaml
 
       - name: Commit changes
         run: |
