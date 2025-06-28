@@ -1,11 +1,7 @@
 name: Analisar as vulnerabilidades do código e da imagem
 
 on:
-  # push:
-  #   branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
-  repository_dispatch:
     branches: [ "main" ]
 
 jobs:
