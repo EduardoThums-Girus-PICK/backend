@@ -79,6 +79,12 @@ jobs:
       - name: Change backend image version on values.yaml
         run: sed -i -E "s/eduardothums\/girus:backend-.*/eduardothums\/girus:backend-${{ github.ref_name }}/g" charts/girus/values.yaml
 
+      - name: Change helm chart version
+        run: |
+          current=$(yq -r '.version' charts/girus/Chart.yaml)
+          next=$(echo "$current" | awk -F. '{$NF += 1; print $1 "." $2 "." $3}')
+          yq -i ".version = \"$next\"" charts/girus/Chart.yaml
+
       - name: Commit changes
         run: |
           git add .
